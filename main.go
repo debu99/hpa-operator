@@ -17,10 +17,10 @@ package main
 
 import (
 	"flag"
-	"github.com/banzaicloud/hpa-operator/pkg/stub"
+	"github.com/debu99/hpa-operator/pkg/stub"
 	"os"
 
-	"github.com/banzaicloud/hpa-operator/pkg/controllers"
+	"github.com/debu99/hpa-operator/pkg/controllers"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

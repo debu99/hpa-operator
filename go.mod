@@ -1,4 +1,4 @@
-module github.com/banzaicloud/hpa-operator
+module github.com/debu99/hpa-operator
 
 go 1.13
 

@@ -17,7 +17,7 @@ package controllers
 
 import (
 	"context"
-	"github.com/banzaicloud/hpa-operator/pkg/stub"
+	"github.com/debu99/hpa-operator/pkg/stub"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
