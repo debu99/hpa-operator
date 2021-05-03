@@ -22,7 +22,7 @@ const targetAverageValue = "targetAverageValue"
 const annotationDomainSeparator = "/"
 const annotationSubDomainSeparator = "."
 
-const annotationRegExpString = "[a-zA-Z\\.]+hpa\\.autoscaling\\.banzaicloud\\.io\\/[a-zA-Z\\.]+"
+const annotationRegExpString = "[a-zA-Z\\.]*hpa\\.autoscaling\\.banzaicloud\\.io\\/[a-zA-Z\\.]+"
 
 func NewHandler(client client.Client) *HPAHandler {
 	r, _ := regexp.Compile(annotationRegExpString)
@@ -47,17 +47,19 @@ func (h *HPAHandler) HandleReplicaSet(
 	logrus.Infof("handle  : %v", name)
 	hpaAnnotationsFound := false
 	hpaAnnotations := h.filterAutoscaleAnnotations(annotations)
+        logrus.Infof("annotations=%q\n", hpaAnnotations)
 	if len(hpaAnnotations) > 0 {
 		hpaAnnotationsFound = true
-		logrus.Infof("Autoscale annotations found on %v", kind)
+		logrus.Infof("Autoscale annotations=%v found on %v", len(hpaAnnotations), kind)
 	} else {
 		hpaAnnotations = h.filterAutoscaleAnnotations(podAnnotations)
+	        logrus.Infof("PodAnnotations=%q\n", hpaAnnotations)
 		if len(hpaAnnotations) > 0 {
 			hpaAnnotationsFound = true
-			logrus.Infof("Autoscale annotations found on Pod")
+			logrus.Infof("Autoscale annotations=%v found on Pod", len(hpaAnnotations))
 		} else {
 			hpaAnnotationsFound = false
-			logrus.Infof("Autoscale annotations not found")
+			logrus.Infof("Autoscale annotations not found on Pod")
 		}
 	}
 
@@ -73,6 +75,7 @@ func (h *HPAHandler) HandleReplicaSet(
 	}
 
 	if exists {
+                logrus.Infof("HorizontalPodAutoscaler already exist.")
 		if !isCreatedByHpaController(&hpa, name, kind) {
 			logrus.Infof("HorizontalPodAutoscaler is not created by us")
 			return nil
@@ -82,8 +85,10 @@ func (h *HPAHandler) HandleReplicaSet(
 			logrus.Infof("HorizontalPodAutoscaler found, will be updated")
 			hpa := createHorizontalPodAutoscaler(UID, name, namespace, kind, apiVersion, hpaAnnotations)
 			if hpa == nil {
+                                logrus.Infof("hpa returns nil")
 				return nil
 			}
+                        logrus.Infof("will update hpa...")
 			err := h.client.Update(ctx, hpa)
 			if err != nil && !errors.IsAlreadyExists(err) {
 				logrus.Errorf("Failed to update HPA: %v", err)
@@ -91,7 +96,6 @@ func (h *HPAHandler) HandleReplicaSet(
 			}
 		} else {
 			logrus.Infof("HorizontalPodAutoscaler found, will be deleted")
-
 			err := h.client.Delete(ctx, &hpa)
 			if err != nil {
 				logrus.Errorf("Failed to delete HPA : %v", err)
@@ -103,8 +107,10 @@ func (h *HPAHandler) HandleReplicaSet(
 		logrus.Infof("HorizontalPodAutoscaler doesn't exist will be created")
 		hpa := createHorizontalPodAutoscaler(UID, name, namespace, kind, apiVersion, hpaAnnotations)
 		if hpa == nil {
+                        logrus.Infof("hpa returns nil")
 			return nil
 		}
+                logrus.Infof("will create hpa...")
 		err := h.client.Create(ctx, hpa)
 		if err != nil && !errors.IsAlreadyExists(err) {
 			logrus.Errorf("Failed to create HPA : %v", err)
@@ -130,11 +136,13 @@ func (h *HPAHandler) filterAutoscaleAnnotations(annotations map[string]string) m
 			autoscaleAnnotations[key] = value
 		}
 	}
+	logrus.Infof("autoscaleAnnotations=%q\n", autoscaleAnnotations)
 	return autoscaleAnnotations
 }
 
 func createHorizontalPodAutoscaler(UID types.UID, name string, namespace string, kind string, apiVersion string, annotations map[string]string) *v2beta2.HorizontalPodAutoscaler {
 
+	logrus.Infof("extractAnnotationIntValue from=%q\n", annotations)
 	minReplicas, err := extractAnnotationIntValue(annotations, hpaAnnotationPrefix+annotationDomainSeparator+"minReplicas", name)
 	if err != nil {
 		logrus.Errorf("Invalid annotation: %v", err.Error())
